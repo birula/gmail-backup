@@ -6,8 +6,8 @@ import re
 
 
 UID_RE = re.compile(r"\d+\s+\(UID (\d+)\)$")
-FILE_RE = re.compile(r"(\d+).eml$")
-GMAIL_FOLDER_NAME = "[Gmail]/All Mail"
+FILE_RE = re.compile(r"(\d+).+eml$")
+GMAIL_FOLDER_NAME = "[Gmail]/Todos os e-mails"
 
 
 def getUIDForMessage(svr, n):
@@ -18,6 +18,13 @@ def getUIDForMessage(svr, n):
             "Internal error parsing UID response: %s %s.  Please try again" % (resp, lst))
     return m.group(1)
 
+def getSubjectForMessage(svr, n):
+    resp, lst = svr.fetch(n, '(BODY[HEADER.FIELDS (SUBJECT)])')
+    #correct subject filename
+    subject = lst[0][1].replace('Subject: ', '').replace('\n', '').replace('\r', '')
+    subject = subject.replace('/', '-').replace(':', '-')
+
+    return subject
 
 def downloadMessage(svr, n, fname):
     resp, lst = svr.fetch(n, '(RFC822)')
@@ -38,7 +45,6 @@ def get_credentials():
     user = raw_input("Gmail address: ")
     pwd = getpass.getpass("Gmail password: ")
     return user, pwd
-
 
 def do_backup():
     svr = imaplib.IMAP4_SSL('imap.gmail.com')
@@ -67,8 +73,9 @@ def do_backup():
     # The download loop
     for i in range(ungotten, count + 1):
         uid = getUIDForMessage(svr, i)
-        print "Downloading %d/%d (UID: %s)" % (i, count, uid)
-        downloadMessage(svr, i, uid + '.eml')
+        subject = getSubjectForMessage(svr, i)
+        print "Downloading %d/%d (UID: %s) (Subject: %s)" % (i, count, uid, subject)
+        downloadMessage(svr, i, uid + '-' + subject + '.eml')
 
     svr.close()
     svr.logout()
