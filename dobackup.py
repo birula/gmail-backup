@@ -22,7 +22,9 @@ def getSubjectForMessage(svr, n):
     resp, lst = svr.fetch(n, '(BODY[HEADER.FIELDS (SUBJECT)])')
     #correct subject filename
     subject = lst[0][1].replace('Subject: ', '').replace('\n', '').replace('\r', '')
-    subject = subject.replace('/', '-').replace(':', '-')
+    subject = subject.replace('/', '-').replace(':', '-').replace(' ', '')
+
+    subject = subject.replace('=?iso-8859-1?Q?', '').replace('?=', '')
 
     return subject
 
